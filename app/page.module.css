@@ -30,6 +30,55 @@
   font-weight: 500;
 }
 
+/* Tab Navigation */
+.tabContainer {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.tabButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+.tabButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.tabButtonActive {
+  background: white;
+  color: #667eea;
+  border-color: white;
+}
+
+.tabButtonActive:hover {
+  background: white;
+  transform: translateY(-1px);
+}
+
+.mapWrapper {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
 .listContainer {
   max-height: 75vh;
   overflow-y: auto;
@@ -60,13 +109,19 @@
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px rgba(0, 0, 0, 0.1),
+    0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .cardHeader {
@@ -115,7 +170,14 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.miniMapSection {
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
 
 .metaItem {
@@ -210,7 +272,9 @@
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
@@ -262,7 +326,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   flex-shrink: 0;
 }
 
@@ -331,6 +397,11 @@
   max-height: 300px;
 }
 
+/* Mobile back button - hidden on desktop */
+.backButton {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .header h1 {
     font-size: 2rem;
@@ -354,16 +425,76 @@
     flex-direction: column;
   }
 
+  /* Hide list when observation is selected on mobile */
+  .listContainerHidden {
+    display: none;
+  }
+
   .listContainerSplit {
     max-width: 100%;
   }
 
+  /* Full-screen detail panel on mobile */
   .detailPanel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    position: relative;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    z-index: 100;
+    padding: 1rem;
+    padding-top: 0;
+  }
+
+  .detailHeader {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding-top: 1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    z-index: 10;
+  }
+
+  /* Show back button on mobile */
+  .backButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .backButton:hover {
+    color: #764ba2;
+  }
+
+  .backButtonIcon {
+    font-size: 1.25rem;
+  }
+
+  /* Hide close button on mobile, use back button instead */
+  .closeButton {
+    display: none;
   }
 
   .imageGrid {
     grid-template-columns: 1fr;
+  }
+
+  .detailImage {
+    max-height: none;
   }
 }

@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import styles from "./page.module.css";
+
+// Dynamically import map components to avoid SSR issues
+const MapView = dynamic(() => import("./MapView"), { ssr: false });
+const DetailMap = dynamic(
+  () => import("./MapView").then((mod) => mod.DetailMap),
+  { ssr: false },
+);
+const MiniMap = dynamic(() => import("./MapView").then((mod) => mod.MiniMap), {
+  ssr: false,
+});
 
 interface Location {
   latitude: number;
@@ -72,6 +83,8 @@ interface DetailedObservation {
   }>;
 }
 
+type ViewMode = "list" | "map";
+
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
@@ -90,6 +103,7 @@ export default function ObservationList({
   const [selectedObservation, setSelectedObservation] =
     useState<DetailedObservation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -97,7 +111,7 @@ export default function ObservationList({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://avcan-services-api.prod.avalanche.ca/min/en/submissions/${id}`
+        `https://avcan-services-api.prod.avalanche.ca/min/en/submissions/${id}`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -136,101 +150,140 @@ export default function ObservationList({
       <header className={styles.header}>
         <h1>Avalanche Observations</h1>
         <p className={styles.subtitle}>
-          Southwest Coast • {itemCount} observations
+          Southwest Coast • {itemCount} observations from the last week
         </p>
       </header>
 
-      <div className={styles.contentWrapper}>
-        <div
-          className={`${styles.listContainer} ${
-            selectedObservation ? styles.listContainerSplit : ""
-          }`}
+      {/* Tab Navigation */}
+      <div className={styles.tabContainer}>
+        <button
+          className={`${styles.tabButton} ${viewMode === "list" ? styles.tabButtonActive : ""}`}
+          onClick={() => setViewMode("list")}
         >
-          {observations.map((obs) => (
-            <div key={obs.id} className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.title}>
-                  <button
-                    className={styles.titleButton}
-                    onClick={() => handleObservationClick(obs.id)}
-                  >
-                    {obs.title}
-                  </button>
-                </h2>
-                <span className={styles.imageCount}>📷 {obs.imageCount}</span>
-              </div>
+          📋 List View
+        </button>
+        <button
+          className={`${styles.tabButton} ${viewMode === "map" ? styles.tabButtonActive : ""}`}
+          onClick={() => setViewMode("map")}
+        >
+          🗺️ Map View
+        </button>
+      </div>
 
-              <div className={styles.metadata}>
-                <div className={styles.metaItem}>
-                  <span className={styles.label}>Submitted by:</span>
-                  <span className={styles.value}>{obs.username}</span>
-                </div>
-                <div className={styles.metaItem}>
-                  <span className={styles.label}>Date:</span>
-                  <span className={styles.value}>
-                    {formatDate(obs.datetime)}
-                  </span>
-                </div>
-                <div className={styles.metaItem}>
-                  <span className={styles.label}>Location:</span>
-                  <span className={styles.value}>
-                    {obs.location.latitude.toFixed(4)},{" "}
-                    {obs.location.longitude.toFixed(4)}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.observations}>
-                <h3>Observations</h3>
-                <div className={styles.observationGrid}>
-                  <div className={styles.observationItem}>
-                    <span className={styles.obsLabel}>Quick</span>
-                    <span className={styles.obsValue}>
-                      {obs.observations.quick}
-                    </span>
-                  </div>
-                  <div className={styles.observationItem}>
-                    <span className={styles.obsLabel}>Avalanche</span>
-                    <span className={styles.obsValue}>
-                      {obs.observations.avalanche}
-                    </span>
-                  </div>
-                  <div className={styles.observationItem}>
-                    <span className={styles.obsLabel}>Snowpack</span>
-                    <span className={styles.obsValue}>
-                      {obs.observations.snowpack}
-                    </span>
-                  </div>
-                  <div className={styles.observationItem}>
-                    <span className={styles.obsLabel}>Weather</span>
-                    <span className={styles.obsValue}>
-                      {obs.observations.weather}
-                    </span>
-                  </div>
-                  <div className={styles.observationItem}>
-                    <span className={styles.obsLabel}>Incident</span>
-                    <span className={styles.obsValue}>
-                      {obs.observations.incident}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {obs.tags && obs.tags.length > 0 && (
-                <div className={styles.tags}>
-                  {obs.tags.map((tag, index) => (
-                    <span key={index} className={styles.tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+      {viewMode === "map" ? (
+        <div className={styles.mapWrapper}>
+          <MapView
+            observations={observations}
+            onObservationSelect={handleObservationClick}
+            selectedId={selectedObservation?.submissionID}
+          />
         </div>
+      ) : null}
+
+      <div className={styles.contentWrapper}>
+        {viewMode === "list" && (
+          <div
+            className={`${styles.listContainer} ${
+              selectedObservation
+                ? `${styles.listContainerSplit} ${styles.listContainerHidden}`
+                : ""
+            }`}
+          >
+            {observations.map((obs) => (
+              <div key={obs.id} className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.title}>
+                    <button
+                      className={styles.titleButton}
+                      onClick={() => handleObservationClick(obs.id)}
+                    >
+                      {obs.title}
+                    </button>
+                  </h2>
+                  <span className={styles.imageCount}>📷 {obs.imageCount}</span>
+                </div>
+
+                <div className={styles.metadata}>
+                  <div className={styles.metaItem}>
+                    <span className={styles.label}>Submitted by:</span>
+                    <span className={styles.value}>{obs.username}</span>
+                  </div>
+                  <div className={styles.metaItem}>
+                    <span className={styles.label}>Date:</span>
+                    <span className={styles.value}>
+                      {formatDate(obs.datetime)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Mini Map for Location */}
+                <div className={styles.miniMapSection}>
+                  <MiniMap
+                    latitude={obs.location.latitude}
+                    longitude={obs.location.longitude}
+                  />
+                </div>
+
+                <div className={styles.observations}>
+                  <h3>Observations</h3>
+                  <div className={styles.observationGrid}>
+                    <div className={styles.observationItem}>
+                      <span className={styles.obsLabel}>Quick</span>
+                      <span className={styles.obsValue}>
+                        {obs.observations.quick}
+                      </span>
+                    </div>
+                    <div className={styles.observationItem}>
+                      <span className={styles.obsLabel}>Avalanche</span>
+                      <span className={styles.obsValue}>
+                        {obs.observations.avalanche}
+                      </span>
+                    </div>
+                    <div className={styles.observationItem}>
+                      <span className={styles.obsLabel}>Snowpack</span>
+                      <span className={styles.obsValue}>
+                        {obs.observations.snowpack}
+                      </span>
+                    </div>
+                    <div className={styles.observationItem}>
+                      <span className={styles.obsLabel}>Weather</span>
+                      <span className={styles.obsValue}>
+                        {obs.observations.weather}
+                      </span>
+                    </div>
+                    <div className={styles.observationItem}>
+                      <span className={styles.obsLabel}>Incident</span>
+                      <span className={styles.obsValue}>
+                        {obs.observations.incident}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {obs.tags && obs.tags.length > 0 && (
+                  <div className={styles.tags}>
+                    {obs.tags.map((tag, index) => (
+                      <span key={index} className={styles.tag}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {selectedObservation && (
           <div className={styles.detailPanel}>
+            <button
+              className={styles.backButton}
+              onClick={closeDetailPanel}
+              aria-label="Back to observations"
+            >
+              <span className={styles.backButtonIcon}>←</span>
+              Back to observations
+            </button>
             <div className={styles.detailHeader}>
               <h2>{selectedObservation.title}</h2>
               <button
@@ -267,14 +320,16 @@ export default function ObservationList({
                         {selectedObservation.region}
                       </span>
                     </div>
-                    <div className={styles.detailMetaItem}>
-                      <span className={styles.label}>Location:</span>
-                      <span className={styles.value}>
-                        {selectedObservation.location.latitude.toFixed(4)},{" "}
-                        {selectedObservation.location.longitude.toFixed(4)}
-                      </span>
-                    </div>
                   </div>
+                </div>
+
+                {/* Map in Detail View */}
+                <div className={styles.detailSection}>
+                  <h3>Location Map</h3>
+                  <DetailMap
+                    latitude={selectedObservation.location.latitude}
+                    longitude={selectedObservation.location.longitude}
+                  />
                 </div>
 
                 {selectedObservation.observations.quick?.comment && (
